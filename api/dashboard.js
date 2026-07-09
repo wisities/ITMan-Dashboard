@@ -24,16 +24,30 @@ export default async function handler(req, res) {
 
   try {
     const url = `${baseUrl}?page=api&action=getDashboardData`;
-    const upstream = await fetch(url, { method: 'GET' });
+    const upstream = await fetch(url, { method: 'GET', redirect: 'follow' });
+
+    const rawText = await upstream.text();
 
     if (!upstream.ok) {
       res.status(502).json({
-        error: `Apps Script ตอบกลับผิดพลาด (HTTP ${upstream.status})`
+        error: `Apps Script ตอบกลับผิดพลาด (HTTP ${upstream.status})`,
+        preview: rawText.slice(0, 300)
       });
       return;
     }
 
-    const data = await upstream.json();
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch (parseErr) {
+      // ไม่ใช่ JSON — น่าจะเป็นหน้า HTML ของ Google (login / consent / error page)
+      // ส่งตัวอย่างเนื้อหากลับไปเพื่อวินิจฉัยสาเหตุที่แท้จริง
+      res.status(502).json({
+        error: "Apps Script ไม่ได้คืนค่าเป็น JSON (อาจติดหน้า login/consent ของ Google)",
+        preview: rawText.slice(0, 300)
+      });
+      return;
+    }
 
     // cache สั้นๆ ที่ edge เพื่อลดการยิงไป Apps Script ถี่เกินไป (ปรับได้ตามต้องการ)
     res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
