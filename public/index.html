@@ -30,6 +30,9 @@
     /* ซ่อนเนื้อหาแท็บที่ไม่ได้เลือก */
     .tab-content { display: none; }
     .tab-content.active { display: block; animation: fadeIn 0.4s ease-out forwards; }
+
+    /* แท็บย่อยของส่วนที่ 4 */
+    .subtab-btn { transition: all .2s ease; }
   </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col selection:bg-indigo-200 selection:text-indigo-900">
@@ -69,25 +72,79 @@
 
   <main class="max-w-7xl mx-auto px-4 py-6 sm:py-8 w-full flex-grow">
 
+    <!-- ================= TAB 1: แผนและการเงิน (BDE-A01) — เปลี่ยนจาก iframe เป็น fetch JSON ================= -->
     <div id="tab1" class="tab-content active">
       <div class="mb-6 flex items-center gap-3">
          <h2 class="text-xl font-bold text-slate-800">สถานะการส่งแผนและสถานะการโอนเงิน (BDE-A01)</h2>
-         <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold border bg-indigo-50 text-indigo-600 border-indigo-200">ระบบภายนอก</span>
       </div>
-      
-      <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden relative">
-         <div class="absolute inset-0 bg-slate-50 flex flex-col items-center justify-center -z-10">
-            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mb-3"></div>
-            <p class="text-slate-400 font-medium text-sm">กำลังโหลดหน้าต่างระบบงาน...</p>
-         </div>
-         <iframe 
-            data-src="https://script.google.com/macros/s/AKfycbwLy37e2OKv1nRdEPFuIfbmJyOxs3ZTSIZ7fBJ1KYtJfTkn0gmlBVee89zLTcIRuJt1/exec?page=viewer" 
-            class="w-full h-[750px] border-0 relative z-10 bg-white"
-            title="BDE-A01 Dashboard"
-         ></iframe>
+
+      <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sm:p-8 mb-6 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 z-0"></div>
+        <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
+          <div class="lg:col-span-4">
+            <label class="block text-sm font-bold text-slate-700 mb-2">ประจำเดือน</label>
+            <select id="v_month" class="w-full bg-white border border-slate-200 text-slate-800 text-sm rounded-2xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 p-3.5 outline-none font-medium shadow-sm">
+              <option value="#Plan 1 สิงหาคม">ประจำเดือน สิงหาคม</option>
+              <option value="#Plan 2 กันยายน">ประจำเดือน กันยายน</option>
+              <option value="#Plan 3 ตุลาคม">ประจำเดือน ตุลาคม</option>
+              <option value="#Plan 4 พฤศจิกายน">ประจำเดือน พฤศจิกายน</option>
+              <option value="#Plan 5 ธันวาคม">ประจำเดือน ธันวาคม</option>
+              <option value="#Plan 6 มกราคม">ประจำเดือน มกราคม</option>
+              <option value="#Plan 7 กุมภาพันธ์">ประจำเดือน กุมภาพันธ์</option>
+              <option value="#Plan 8 มีนาคม">ประจำเดือน มีนาคม</option>
+              <option value="#Plan 9 เมษายน">ประจำเดือน เมษายน</option>
+              <option value="#Plan 10 พฤษภาคม">ประจำเดือน พฤษภาคม</option>
+              <option value="#Plan 11 มิถุนายน">ประจำเดือน มิถุนายน</option>
+              <option value="#Plan 12 รอบพิเศษ">รอบพิเศษ</option>
+            </select>
+          </div>
+          <div class="lg:col-span-4">
+            <label class="block text-sm font-bold text-slate-700 mb-2">รหัสอำเภอ / ชื่ออำเภอ</label>
+            <input type="text" id="v_code" placeholder="เช่น 1001 หรือ ชื่ออำเภอ" class="w-full bg-white border border-slate-200 text-sm rounded-2xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 p-3.5 outline-none font-medium shadow-sm placeholder-slate-400" onkeypress="if(event.key === 'Enter') viewerSearch()">
+          </div>
+          <div class="lg:col-span-4">
+            <button onclick="viewerSearch()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 rounded-2xl shadow-md shadow-indigo-500/30 transition-all font-bold flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+              ค้นหาสถานะ
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="v_error" class="hidden bg-rose-50 text-rose-600 p-4 rounded-[1.25rem] border border-rose-200 mb-6 text-center font-medium shadow-sm"></div>
+
+      <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-600">
+            <thead class="bg-slate-50/50 text-slate-500 uppercase text-[11px] tracking-wider font-semibold border-b border-slate-100">
+              <tr>
+                <th class="px-6 py-4">รหัสอำเภอ</th>
+                <th class="px-6 py-4">ชื่ออำเภอ</th>
+                <th class="px-6 py-4">เจ้าหน้าที่ฯ</th>
+                <th class="px-6 py-4">สถานะแผน</th>
+                <th class="px-6 py-4">สถานะโอนเงิน</th>
+                <th class="px-6 py-4 text-center">จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="v_tbody" class="divide-y divide-slate-100">
+              <tr>
+                <td colspan="6" class="text-center py-20">
+                  <div class="flex flex-col items-center justify-center text-slate-400">
+                    <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                      <svg class="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <p class="text-lg font-bold text-slate-600">พร้อมตรวจสอบข้อมูล</p>
+                    <p class="text-sm mt-1 text-slate-500">เลือกเดือนแล้วกดค้นหาได้เลย</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
+    <!-- ================= TAB 2: ประเมินการทำงาน (BDE-A02) — เดิม ไม่แก้ไข ================= -->
     <div id="tab2" class="tab-content">
       
       <div id="loadingIndicator" class="flex flex-col items-center justify-center py-32">
@@ -193,39 +250,93 @@
       </div>
     </div>
 
+    <!-- ================= TAB 3: ลุ้นรางวัลมิถุนายน — เปลี่ยนจาก iframe เป็น fetch JSON ================= -->
     <div id="tab3" class="tab-content">
-      <div class="mb-6 flex items-center gap-3">
-         <h2 class="text-xl font-bold text-slate-800">ตรวจสอบสิทธิ์ลุ้นรางวัลเดือนมิถุนายน</h2>
-         <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold border bg-indigo-50 text-indigo-600 border-indigo-200">ระบบภายนอก</span>
+      <div class="bg-gradient-to-r from-slate-800 to-slate-900 rounded-3xl p-6 sm:p-8 mb-6 text-white relative overflow-hidden shadow-lg">
+        <div class="absolute -right-10 -top-10 w-48 h-48 bg-indigo-500/20 rounded-full blur-3xl"></div>
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-xl sm:text-2xl font-bold flex items-center gap-2">⌚ สิทธิ์ลุ้นรางวัลเดือนมิถุนายน</h2>
+            <p class="text-slate-300 text-sm mt-1">ส่งรายงานผลภายในวันที่ 20 มิถุนายน 2569 (23:59 น.)</p>
+          </div>
+          <div class="bg-white/10 border border-white/20 rounded-2xl px-6 py-3 text-center backdrop-blur-sm">
+            <div class="text-[11px] text-slate-300 font-bold uppercase tracking-wider">มีสิทธิ์ลุ้นรางวัล</div>
+            <div class="text-3xl font-black text-amber-400" id="june_count">0</div>
+          </div>
+        </div>
       </div>
-      <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden relative">
-         <div class="absolute inset-0 bg-slate-50 flex flex-col items-center justify-center -z-10">
-            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mb-3"></div>
-            <p class="text-slate-400 font-medium text-sm">กำลังโหลดหน้าต่างระบบงาน...</p>
-         </div>
-         <iframe 
-            data-src="https://script.google.com/macros/s/AKfycbwLy37e2OKv1nRdEPFuIfbmJyOxs3ZTSIZ7fBJ1KYtJfTkn0gmlBVee89zLTcIRuJt1/exec?page=june_lotto" 
-            class="w-full h-[750px] border-0 relative z-10 bg-white"
-            title="June Lotto Dashboard"
-         ></iframe>
+
+      <div class="flex justify-end mb-4">
+        <button onclick="loadJuneLotto()" id="june_refresh_btn" class="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-sm px-5 py-2.5 shadow-sm flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+          รีเฟรชข้อมูล
+        </button>
+      </div>
+
+      <div id="june_alert" class="hidden mb-4"></div>
+
+      <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-600">
+            <thead class="bg-slate-50/50 text-slate-500 uppercase text-[11px] tracking-wider font-semibold border-b border-slate-100">
+              <tr>
+                <th class="px-6 py-4 text-center w-20">ลำดับ</th>
+                <th class="px-6 py-4">รหัสอำเภอ</th>
+                <th class="px-6 py-4">ชื่ออำเภอ</th>
+                <th class="px-6 py-4">วัน/เวลาที่ส่งรายงาน</th>
+                <th class="px-6 py-4 text-center">สถานะสิทธิ์</th>
+              </tr>
+            </thead>
+            <tbody id="june_tbody" class="divide-y divide-slate-100">
+              <tr><td colspan="5" class="text-center py-16 text-slate-400">กำลังโหลด...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
+    <!-- ================= TAB 4: รอบพิเศษ — เปลี่ยนจาก iframe เป็น fetch JSON ================= -->
     <div id="tab4" class="tab-content">
-      <div class="mb-6 flex items-center gap-3">
-         <h2 class="text-xl font-bold text-slate-800">ตรวจสอบสิทธิ์ลุ้นรางวัลรอบพิเศษ</h2>
-         <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold border bg-indigo-50 text-indigo-600 border-indigo-200">ระบบภายนอก</span>
+      <div class="bg-gradient-to-r from-indigo-700 to-purple-700 rounded-3xl p-6 sm:p-8 mb-6 text-white relative overflow-hidden shadow-lg">
+        <div class="absolute -right-10 -top-10 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-xl sm:text-2xl font-bold flex items-center gap-2">🏆 แคมเปญรอบพิเศษ Y2569_SP1</h2>
+            <p class="text-indigo-100 text-sm mt-1">ตัดสินลำดับโควตา 1–342 จากเวลาที่ส่งรายงานผลสำเร็จในระบบ</p>
+          </div>
+          <div class="bg-white/10 border border-white/20 rounded-2xl px-6 py-3 text-center backdrop-blur-sm min-w-[160px]">
+            <div class="text-[11px] text-indigo-100 font-bold uppercase tracking-wider">โควตาปัจจุบัน</div>
+            <div class="text-3xl font-black text-white" id="sp_quota">0 / 342</div>
+          </div>
+        </div>
+        <div class="relative z-10 mt-4 w-full bg-black/20 rounded-full h-3 overflow-hidden">
+          <div id="sp_progress" class="bg-emerald-400 h-3 rounded-full transition-all duration-1000" style="width:0%"></div>
+        </div>
       </div>
-      <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden relative">
-         <div class="absolute inset-0 bg-slate-50 flex flex-col items-center justify-center -z-10">
-            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mb-3"></div>
-            <p class="text-slate-400 font-medium text-sm">กำลังโหลดหน้าต่างระบบงาน...</p>
-         </div>
-         <iframe 
-            data-src="https://script.google.com/macros/s/AKfycbwLy37e2OKv1nRdEPFuIfbmJyOxs3ZTSIZ7fBJ1KYtJfTkn0gmlBVee89zLTcIRuJt1/exec?page=special" 
-            class="w-full h-[750px] border-0 relative z-10 bg-white"
-            title="Special Lotto Dashboard"
-         ></iframe>
+
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div class="flex flex-wrap gap-2">
+          <button onclick="spSwitch('top')" id="sp_btn_top" class="subtab-btn px-4 py-2.5 rounded-xl font-bold text-sm bg-indigo-600 text-white shadow-md shadow-indigo-500/30">🥇 RANK 1-342</button>
+          <button onclick="spSwitch('miss')" id="sp_btn_miss" class="subtab-btn px-4 py-2.5 rounded-xl font-bold text-sm bg-white text-slate-600 border border-slate-200">RANK 343+</button>
+          <button onclick="spSwitch('schedule')" id="sp_btn_schedule" class="subtab-btn px-4 py-2.5 rounded-xl font-bold text-sm bg-white text-slate-600 border border-slate-200">เรียงตามแผนจัดอบรม</button>
+        </div>
+        <button onclick="loadSpecial()" class="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-sm px-5 py-2.5 shadow-sm flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+          รีเฟรช
+        </button>
+      </div>
+
+      <div id="sp_alert" class="hidden mb-4"></div>
+
+      <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-600">
+            <thead class="bg-slate-50/50 text-slate-500 uppercase text-[11px] tracking-wider font-semibold border-b border-slate-100" id="sp_thead"></thead>
+            <tbody id="sp_tbody" class="divide-y divide-slate-100">
+              <tr><td colspan="5" class="text-center py-16 text-slate-400">กำลังโหลด...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -310,17 +421,75 @@
     </div>
   </div>
 
+  <!-- Modal รายละเอียดอำเภอ (สำหรับ Tab 1) -->
+  <div id="viewerDetailModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+      <div class="fixed inset-0 transition-opacity" aria-hidden="true" onclick="closeViewerDetailModal()">
+        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"></div>
+      </div>
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+      <div class="inline-block align-bottom bg-white rounded-3xl text-left shadow-2xl transform transition-all sm:my-8 sm:align-middle w-full max-w-2xl relative modal-in border border-slate-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-slate-800 to-slate-900 p-6 rounded-t-3xl text-white relative">
+          <div class="absolute -right-10 -top-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+          <button onclick="closeViewerDetailModal()" class="absolute top-5 right-5 text-slate-400 hover:text-white bg-white/10 hover:bg-white/20 p-1.5 rounded-full transition z-10">
+             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+          <h3 class="text-lg font-bold relative z-10">ข้อมูลสถานะปัจจุบัน</h3>
+          <p class="text-slate-400 text-sm mt-0.5 relative z-10" id="vm_titleCode">-</p>
+        </div>
+        <div class="p-6 sm:p-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">จนท. ประจำพื้นที่</label>
+            <div class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-700" id="vm_officer">-</div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">ผู้ที่ส่งแผน</label>
+            <div class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700" id="vm_sender">-</div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">วันที่จัดกิจกรรม</label>
+            <div class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700" id="vm_date">-</div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">สถานที่จัดกิจกรรม</label>
+            <div class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700" id="vm_place">-</div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">ตรวจสอบแผน</label>
+            <div class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700" id="vm_planStatus">-</div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">การโอนเงิน</label>
+            <div class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700" id="vm_transfer">-</div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">เอกสารจริง</label>
+            <div class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700" id="vm_doc">-</div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">เลขติดตามพัสดุ</label>
+            <div class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700" id="vm_tracking">-</div>
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-[11px] font-bold text-rose-500 uppercase tracking-wider mb-1">หมายเหตุ / สิ่งที่ต้องแก้ไข</label>
+            <div class="bg-rose-50/50 border border-rose-100 rounded-xl px-4 py-2.5 text-sm text-slate-700" id="vm_note">-</div>
+          </div>
+        </div>
+        <div class="p-4 bg-slate-50 border-t border-slate-100 text-right">
+          <button onclick="closeViewerDetailModal()" class="bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 font-bold py-2.5 px-8 rounded-xl shadow-sm transition-colors">ปิดหน้าต่าง</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // ------------------------------------
-    // 1. ระบบควบคุม Tab (ปรับปรุงให้รองรับ 4 แท็บ + lazy-load iframe)
-    // ------------------------------------
+    // ==================================================================
+    // 1. ระบบควบคุม Tab
+    // ==================================================================
     function switchTab(tabId) {
-      // ปิดทุก Tab ก่อน
       document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-      // เปิด Tab ที่เลือก
       document.getElementById(tabId).classList.add('active');
 
-      // อัปเดตสถานะปุ่มเมนูทั้งหมด
       const allTabs = ['tab1', 'tab2', 'tab3', 'tab4'];
       allTabs.forEach(id => {
           const btn = document.getElementById('btn-' + id);
@@ -331,23 +500,309 @@
           }
       });
 
-      // ดึงข้อมูลกรณีเปิดแท็บ 2 ครั้งแรก
-      if(tabId === 'tab2' && allData.length === 0 && !isDataLoading) {
+      // Tab 2: ดึงข้อมูลประเมินการทำงานตอนเปิดครั้งแรก
+      if (tabId === 'tab2' && allData.length === 0 && !isDataLoading) {
           loadA02Data();
       }
-
-      // ✅ Lazy-load iframe: โหลด src เข้า iframe เฉพาะตอนเปิดแท็บนั้นเป็นครั้งแรกเท่านั้น
-      // ป้องกันปัญหา script.google.com "refused to connect" / (blocked:other)
-      // ที่เกิดจากการโหลดหลาย iframe ของ script.google.com พร้อมกันตั้งแต่ page load
-      const activeIframe = document.querySelector('#' + tabId + ' iframe[data-src]');
-      if (activeIframe && !activeIframe.getAttribute('src')) {
-          activeIframe.setAttribute('src', activeIframe.getAttribute('data-src'));
+      // Tab 3: ดึงข้อมูลลุ้นรางวัลมิถุนายนตอนเปิดครั้งแรก
+      if (tabId === 'tab3' && !window.__juneLoaded) {
+          window.__juneLoaded = true;
+          loadJuneLotto();
       }
+      // Tab 4: ดึงข้อมูลรอบพิเศษตอนเปิดครั้งแรก
+      if (tabId === 'tab4' && !window.__specialLoaded) {
+          window.__specialLoaded = true;
+          loadSpecial();
+      }
+      // หมายเหตุ: ไม่มีการใช้ iframe อีกต่อไป — tab 1,3,4 ดึงข้อมูลผ่าน /api/* (JSON) ทั้งหมด
     }
 
-    // ------------------------------------
-    // 2. Data & Logic
-    // ------------------------------------
+    // ==================================================================
+    // 2. Tab 1: แผนและการเงิน (BDE-A01) — fetch JSON แทน iframe
+    // ==================================================================
+    function viewerSearch() {
+      const month = document.getElementById('v_month').value;
+      const code = document.getElementById('v_code').value.trim();
+      const tbody = document.getElementById('v_tbody');
+      const errBox = document.getElementById('v_error');
+      errBox.classList.add('hidden');
+
+      tbody.innerHTML = `
+        <tr><td colspan="6" class="text-center py-16">
+          <div class="flex flex-col items-center justify-center text-indigo-500">
+            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mb-4"></div>
+            <span class="font-bold">กำลังดึงข้อมูล...</span>
+          </div>
+        </td></tr>`;
+
+      fetch(`/api/viewer?month=${encodeURIComponent(month)}&code=${encodeURIComponent(code)}`)
+        .then(r => r.json())
+        .then(res => {
+          if (!res.success) {
+            errBox.innerText = res.message || 'เกิดข้อผิดพลาด';
+            errBox.classList.remove('hidden');
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-rose-500 font-bold">${res.message || 'เกิดข้อผิดพลาด'}</td></tr>`;
+            return;
+          }
+          const list = res.list || [];
+          if (list.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-slate-500 font-medium">ไม่พบข้อมูลที่ตรงกับเงื่อนไข กรุณาตรวจสอบอีกครั้ง</td></tr>`;
+            return;
+          }
+
+          tbody.innerHTML = list.map(r => {
+            const pBadge = r.plan === "ตรวจแล้ว/เอกสารครบถ้วน" ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                           (r.plan === "ตรวจแล้ว/มีแก้ไข" ? "bg-rose-50 text-rose-600 border-rose-100" :
+                           (r.plan === "ได้รับเอกสารแล้ว รอตรวจ" ? "bg-amber-50 text-amber-600 border-amber-100" : "bg-slate-100 text-slate-600 border-slate-200"));
+
+            const tBadge = r.transfer === "โอนแล้ว" ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                           (r.transfer === "การโอนเงินมีปัญหา" || r.transfer === "ไม่อนุมัติ" ? "bg-rose-50 text-rose-600 border-rose-100" :
+                           (r.transfer === "โอนเงินรอบนี้" ? "bg-indigo-50 text-indigo-600 border-indigo-100" :
+                           (r.transfer === "รอโอนรอบหน้า" ? "bg-sky-50 text-sky-600 border-sky-100" : "bg-slate-50 text-slate-500 border-slate-200")));
+
+            return `
+              <tr class="hover:bg-slate-50/80 transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap font-bold text-indigo-700 text-lg">${r.code}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-slate-700 font-bold">${r.name}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-xs text-slate-500">${r.officer || '-'}</td>
+                <td class="px-6 py-4 whitespace-nowrap"><span class="px-2.5 py-1 rounded-lg text-[11px] font-bold border ${pBadge}">${r.plan || '-'}</span></td>
+                <td class="px-6 py-4 whitespace-nowrap"><span class="px-2.5 py-1 rounded-lg text-[11px] font-bold border ${tBadge}">${r.transfer || '-'}</span></td>
+                <td class="px-6 py-4 whitespace-nowrap text-center">
+                  <button class="inline-flex items-center justify-center bg-indigo-50 border border-indigo-100 text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-xl px-4 py-2 text-xs font-bold shadow-sm transition-all" onclick="viewerDetail('${month.replace(/'/g, "\\'")}', '${r.code}', '${(r.name || '').replace(/'/g, "\\'")}')">
+                    เปิดดูรายละเอียด
+                  </button>
+                </td>
+              </tr>`;
+          }).join('');
+        })
+        .catch(err => {
+          errBox.innerText = 'เชื่อมต่อไม่สำเร็จ: ' + err.message;
+          errBox.classList.remove('hidden');
+          tbody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-rose-500 font-bold">เชื่อมต่อไม่สำเร็จ: ${err.message}</td></tr>`;
+        });
+    }
+
+    function viewerDetail(month, code, name) {
+      document.getElementById('vm_titleCode').innerText = code + ' - ' + name;
+      ['vm_officer','vm_sender','vm_date','vm_place','vm_planStatus','vm_transfer','vm_doc','vm_tracking','vm_note'].forEach(id => {
+        document.getElementById(id).innerText = 'กำลังโหลด...';
+      });
+
+      const m = document.getElementById('viewerDetailModal');
+      m.classList.remove('hidden');
+      m.querySelector('.modal-in').style.animation = 'none';
+      setTimeout(() => m.querySelector('.modal-in').style.animation = '', 10);
+
+      fetch(`/api/viewer?action=single&month=${encodeURIComponent(month)}&code=${encodeURIComponent(code)}`)
+        .then(r => r.json())
+        .then(res => {
+          if (!res.success) {
+            alert(res.message || 'ไม่พบข้อมูล');
+            closeViewerDetailModal();
+            return;
+          }
+          document.getElementById('vm_officer').innerText = res.f_officer || '-';
+          document.getElementById('vm_sender').innerText = res.k_sender || '-';
+          document.getElementById('vm_date').innerText = res.p_date || '-';
+          document.getElementById('vm_place').innerText = res.q_place || '-';
+          document.getElementById('vm_planStatus').innerText = res.t_planStatus || '-';
+          document.getElementById('vm_transfer').innerText = res.u_transfer || '-';
+          document.getElementById('vm_doc').innerText = res.ab_docStatus || '-';
+          document.getElementById('vm_tracking').innerText = res.ac_tracking || '-';
+          document.getElementById('vm_note').innerText = res.y_note || '-';
+        })
+        .catch(err => { alert('การเชื่อมต่อล้มเหลว: ' + err.message); });
+    }
+
+    function closeViewerDetailModal() {
+      document.getElementById('viewerDetailModal').classList.add('hidden');
+    }
+
+    // ==================================================================
+    // 3. Tab 3: สิทธิ์ลุ้นรางวัลมิถุนายน — fetch JSON แทน iframe
+    // ==================================================================
+    function loadJuneLotto() {
+      const tbody = document.getElementById('june_tbody');
+      const alertBox = document.getElementById('june_alert');
+      const btn = document.getElementById('june_refresh_btn');
+      btn.disabled = true;
+      alertBox.classList.add('hidden');
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-16 text-slate-400">กำลังประมวลผลเวลาส่งรายงาน...</td></tr>';
+
+      fetch('/api/june-lotto')
+        .then(r => r.json())
+        .then(res => {
+          btn.disabled = false;
+          if (!res.success) {
+            alertBox.className = 'mb-4 bg-rose-50 text-rose-600 p-4 rounded-2xl border border-rose-200 font-medium';
+            alertBox.innerText = res.message || 'เกิดข้อผิดพลาด';
+            alertBox.classList.remove('hidden');
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-rose-500 font-bold">${res.message || 'เกิดข้อผิดพลาด'}</td></tr>`;
+            return;
+          }
+
+          document.getElementById('june_count').innerText = res.eligibleCount;
+          const list = res.list || [];
+
+          if (list.length === 0) {
+            alertBox.className = 'mb-4 bg-sky-50 text-sky-600 p-4 rounded-2xl border border-sky-200 font-medium';
+            alertBox.innerText = 'ยังไม่มีอำเภอใดส่งรายงานผลในแท็บ #Plan 11 มิถุนายน';
+            alertBox.classList.remove('hidden');
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-10 text-slate-400">ยังไม่มีข้อมูล</td></tr>';
+            return;
+          }
+
+          const missedCount = list.filter(r => !r.isEligible).length;
+          alertBox.className = 'mb-4 bg-emerald-50 text-emerald-700 p-4 rounded-2xl border border-emerald-200 font-medium';
+          alertBox.innerText = `พบ ${res.eligibleCount} อำเภอที่มีสิทธิ์ (${missedCount > 0 ? missedCount + ' อำเภอส่งเกินกำหนด' : 'ทั้งหมดส่งตรงเวลา'}) - อัปเดตเมื่อ ${new Date().toLocaleTimeString('th-TH')}`;
+          alertBox.classList.remove('hidden');
+
+          tbody.innerHTML = list.map(r => {
+            const badgeClass = r.isEligible ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100';
+            const rowClass = r.isEligible ? '' : 'opacity-50';
+            return `
+              <tr class="${rowClass}">
+                <td class="px-6 py-4 text-center font-bold">${r.rank}</td>
+                <td class="px-6 py-4 font-bold text-indigo-700">${r.code}</td>
+                <td class="px-6 py-4">${r.name}</td>
+                <td class="px-6 py-4 text-indigo-600 font-bold">${r.reportTime}</td>
+                <td class="px-6 py-4 text-center"><span class="px-2.5 py-1 rounded-lg text-[11px] font-bold border ${badgeClass}">${r.status}</span></td>
+              </tr>`;
+          }).join('');
+        })
+        .catch(err => {
+          btn.disabled = false;
+          alertBox.className = 'mb-4 bg-rose-50 text-rose-600 p-4 rounded-2xl border border-rose-200 font-medium';
+          alertBox.innerText = 'เชื่อมต่อไม่สำเร็จ: ' + err.message;
+          alertBox.classList.remove('hidden');
+          tbody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-rose-500 font-bold">เชื่อมต่อไม่สำเร็จ: ${err.message}</td></tr>`;
+        });
+    }
+
+    // ==================================================================
+    // 4. Tab 4: รอบพิเศษ — fetch JSON แทน iframe
+    // ==================================================================
+    let spData = null;
+    let spView = 'top';
+
+    function loadSpecial() {
+      const tbody = document.getElementById('sp_tbody');
+      const alertBox = document.getElementById('sp_alert');
+      alertBox.classList.add('hidden');
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-16 text-slate-400">กำลังโหลดข้อมูล...</td></tr>';
+
+      fetch('/api/special')
+        .then(r => r.json())
+        .then(res => {
+          if (!res.success) {
+            alertBox.className = 'mb-4 bg-rose-50 text-rose-600 p-4 rounded-2xl border border-rose-200 font-medium';
+            alertBox.innerText = res.message || 'เกิดข้อผิดพลาด';
+            alertBox.classList.remove('hidden');
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-rose-500 font-bold">${res.message || 'เกิดข้อผิดพลาด'}</td></tr>`;
+            return;
+          }
+          spData = res;
+          const lb = res.leaderboard || {};
+          const currentReports = lb.currentReports || 0;
+          const totalQuota = lb.totalQuota || 342;
+          const pct = totalQuota ? Math.round((currentReports / totalQuota) * 100) : 0;
+
+          document.getElementById('sp_quota').innerText = `${currentReports} / ${totalQuota}`;
+          document.getElementById('sp_progress').style.width = pct + '%';
+
+          spRender();
+        })
+        .catch(err => {
+          alertBox.className = 'mb-4 bg-rose-50 text-rose-600 p-4 rounded-2xl border border-rose-200 font-medium';
+          alertBox.innerText = 'เชื่อมต่อไม่สำเร็จ: ' + err.message;
+          alertBox.classList.remove('hidden');
+          tbody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-rose-500 font-bold">เชื่อมต่อไม่สำเร็จ: ${err.message}</td></tr>`;
+        });
+    }
+
+    function spSwitch(view) {
+      spView = view;
+      ['top', 'miss', 'schedule'].forEach(v => {
+        const btn = document.getElementById('sp_btn_' + v);
+        btn.className = v === view
+          ? 'subtab-btn px-4 py-2.5 rounded-xl font-bold text-sm bg-indigo-600 text-white shadow-md shadow-indigo-500/30'
+          : 'subtab-btn px-4 py-2.5 rounded-xl font-bold text-sm bg-white text-slate-600 border border-slate-200';
+      });
+      spRender();
+    }
+
+    function transferBadgeClass(transfer) {
+      if (transfer === 'โอนแล้ว') return 'bg-emerald-50 text-emerald-700 border-emerald-100';
+      if (transfer === 'รอโอนรอบนี้') return 'bg-sky-50 text-sky-700 border-sky-100';
+      if (transfer === 'รอโอนรอบหน้า') return 'bg-amber-50 text-amber-700 border-amber-100';
+      if (transfer === 'ไม่อนุมัติ') return 'bg-rose-50 text-rose-700 border-rose-100';
+      return 'bg-slate-50 text-slate-500 border-slate-200';
+    }
+
+    function spRender() {
+      if (!spData) return;
+      const thead = document.getElementById('sp_thead');
+      const tbody = document.getElementById('sp_tbody');
+      const alertBox = document.getElementById('sp_alert');
+      alertBox.classList.add('hidden');
+
+      if (spView === 'schedule') {
+        thead.innerHTML = `<tr>
+          <th class="px-6 py-4 text-center w-20">ลำดับ</th>
+          <th class="px-6 py-4">รหัส - ชื่ออำเภอ</th>
+          <th class="px-6 py-4">วันที่จัดอบรม</th>
+          <th class="px-6 py-4 text-center">สถานะ</th>
+        </tr>`;
+        const list = (spData.schedule && spData.schedule.list) || [];
+        if (!spData.schedule || !spData.schedule.success) {
+          tbody.innerHTML = `<tr><td colspan="4" class="text-center py-10 text-rose-500 font-bold">${(spData.schedule && spData.schedule.message) || 'เกิดข้อผิดพลาด'}</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = list.length ? list.map(r => `
+          <tr>
+            <td class="px-6 py-4 text-center font-bold">${r.rank}</td>
+            <td class="px-6 py-4"><strong class="text-indigo-700">${r.code}</strong> - ${r.name}</td>
+            <td class="px-6 py-4 text-amber-600 font-bold">${r.trainingDate}</td>
+            <td class="px-6 py-4 text-center"><span class="px-2.5 py-1 rounded-lg text-[11px] font-bold border bg-amber-50 text-amber-700 border-amber-100">${r.statusText}</span></td>
+          </tr>`).join('') : '<tr><td colspan="4" class="text-center py-10 text-slate-400">ไม่มีอำเภอที่ส่งแผนแต่ยังไม่รายงานผล</td></tr>';
+        return;
+      }
+
+      thead.innerHTML = `<tr>
+        <th class="px-6 py-4 text-center w-20">ลำดับ</th>
+        <th class="px-6 py-4">รหัส - ชื่ออำเภอ</th>
+        <th class="px-6 py-4">เวลาส่งรายงาน</th>
+        <th class="px-6 py-4 text-center">สถานะ</th>
+        <th class="px-6 py-4 text-center">โอนเงิน</th>
+      </tr>`;
+
+      if (!spData.leaderboard || !spData.leaderboard.success) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-rose-500 font-bold">${(spData.leaderboard && spData.leaderboard.message) || 'เกิดข้อผิดพลาด'}</td></tr>`;
+        return;
+      }
+
+      const fullList = spData.leaderboard.list || [];
+      const list = spView === 'top' ? fullList.filter(r => r.rank <= 342) : fullList.filter(r => r.rank > 342);
+
+      if (spView === 'miss' && list.length === 0) {
+        alertBox.className = 'mb-4 bg-emerald-50 text-emerald-700 p-4 rounded-2xl border border-emerald-200 font-medium';
+        alertBox.innerText = `ไม่มีอำเภอเกินโควตา ทั้งหมด ${fullList.length} อำเภอส่งแล้ว`;
+        alertBox.classList.remove('hidden');
+      }
+
+      tbody.innerHTML = list.length ? list.map(r => `
+        <tr>
+          <td class="px-6 py-4 text-center font-bold">${r.rank}</td>
+          <td class="px-6 py-4"><strong class="text-indigo-700">${r.code}</strong> - ${r.name}</td>
+          <td class="px-6 py-4 text-indigo-600 font-bold">${r.reportTime}</td>
+          <td class="px-6 py-4 text-center"><span class="px-2.5 py-1 rounded-lg text-[11px] font-bold border bg-emerald-50 text-emerald-700 border-emerald-100">${r.status}</span></td>
+          <td class="px-6 py-4 text-center"><span class="px-2.5 py-1 rounded-lg text-[11px] font-bold border ${transferBadgeClass(r.transfer)}">${r.transfer || '-'}</span></td>
+        </tr>`).join('') : '<tr><td colspan="5" class="text-center py-10 text-slate-400">ไม่มีข้อมูล</td></tr>';
+    }
+
+    // ==================================================================
+    // 5. Tab 2: ประเมินการทำงาน (BDE-A02) — โค้ดเดิม ไม่แก้ไข
+    // ==================================================================
     let allData = [];
     let isDataLoading = false;
     const monthLabels = ["สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม", "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "รอบพิเศษ"];
@@ -367,12 +822,6 @@
       { start: new Date('2026-06-10'), end: new Date('2026-07-10T23:59:59') }  // รอบพิเศษ (สิ้นสุด 10 ก.ค. 69)
     ];
 
-    // ----------------------------------------------------------------
-    // เดิมฟังก์ชันนี้ใช้ google.script.run ซึ่งใช้ได้เฉพาะตอนหน้าเว็บถูก
-    // เสิร์ฟจาก Apps Script (HtmlService) เท่านั้น พอย้ายมาอยู่บน Vercel
-    // ตัวแปร `google` จะไม่มีอยู่จริง จึงเปลี่ยนมาเรียก /api/dashboard
-    // (Vercel serverless function) ที่ไปดึงข้อมูลจาก Apps Script ให้แทน
-    // ----------------------------------------------------------------
     function loadA02Data() {
       isDataLoading = true;
       document.getElementById('loadingIndicator').classList.remove('hidden');
@@ -423,9 +872,7 @@
       const isEvEmpty = (evVal === "" || evVal === "-"); 
       const isOldSystem = (periodIndex <= 4); 
       
-      // เอา "สร้างร่าง" ออกจากการนับว่าส่งงานสำเร็จ
       const hasSubmitted = subVal.includes("ส่งรายงาน") || subVal.includes("มีแก้ไข");
-      // เช็คสถานะร่างเพื่อนำไปแสดงข้อความแจ้งเตือนให้ตรงจุด
       const isDraft = subVal.includes("สร้างร่าง"); 
 
       let type, className, text, score = null, tooltip = "";
@@ -445,7 +892,6 @@
              text = "✅ ส่งงานปัจจุบันสำเร็จ"; tooltip = "รอจบเดือนเพื่อส่งไฟล์ให้ สดช. ตรวจ";
           } else if (isCurrentWindow) {
              type = "wait"; className = "bg-sky-50 text-sky-700 border-sky-200"; 
-             // แยกข้อความถ้าทำร่างไว้แต่ยังไม่ส่ง
              text = isDraft ? "📝 สร้างร่าง (ยังไม่ส่ง)" : "เปิดรับงานอยู่"; 
              tooltip = isDraft ? "กรุณากดยืนยันการส่งรายงาน" : "อยู่ระหว่างดำเนินการประจำเดือน";
           } else if (isPastDeadline) {
@@ -454,7 +900,6 @@
                  text = "❌ ไม่ดึงข้อมูลเก่า"; tooltip = "ไม่ได้โหลดข้อมูลเก่ามาทำต่อ"; score = 0; 
              } else if (!hasSubmitted) {
                  type = "missing"; className = "bg-rose-50 text-rose-700 border-rose-200"; 
-                 // ถ้าพ้นกำหนดแล้วมีแค่ร่าง จะถือว่าไม่ส่งงาน และขึ้นเตือนว่าลืมกดส่ง
                  text = isDraft ? "❌ ไม่ส่งรายงาน" : "❌ ไม่ส่งรายงาน"; 
                  tooltip = isDraft ? "ทำร่างไว้แต่พ้นกำหนดส่ง" : "พ้นกำหนดเวลาส่งงาน"; score = 0; 
              } else {
@@ -472,7 +917,6 @@
     }
 
     function calculateDistrictStats(periods) {
-      // ตรวจสอบว่าอำเภอในแถวนี้เป็นกลุ่ม "รอบพิเศษ" หรือไม่ (ถ้าเดือน 1-11 เป็น "-" หมด)
       const isSpecialOnlyRow = periods.slice(0, 11).every(p => p.subStatus === "-" && p.evalStatus === "-");
 
       let earnedScore = 0, maxPossibleScore = 0, countPass = 0, countWait = 0, countMissing = 0;
@@ -480,7 +924,6 @@
 
       periods.forEach((p, index) => {
         let cat;
-        // ป้องกันบักการนำค่า "-" มาคิดตกชั้นสำหรับกลุ่มรอบพิเศษ
         if (isSpecialOnlyRow && index < 11) {
             cat = { 
                 type: "skip", class: "bg-slate-50 text-slate-300 border-slate-100", 
@@ -496,7 +939,6 @@
         if(cat.type === 'pass') countPass++;
         if(cat.type === 'wait' || cat.type === 'edit') countWait++;
         
-        // เช็ค Downgrade: ถ้ามีเดือนที่ขาดส่ง (missing)
         if(cat.type === 'missing') {
             countMissing++;
             isAutoDowngraded = true; 
@@ -507,13 +949,11 @@
       let riskLevel = "Pending", riskClass = "bg-slate-100 text-slate-500 border-slate-200", riskLabel = "⚪ รอดำเนินการ";
 
       if (maxPossibleScore > 0) {
-         // เกณฑ์ใหม่: >=80% ปกติ, 60-79% ปานกลาง, <=59% ต้องติดตาม
          if (percent >= 80) { riskLevel = "Low"; riskClass = "bg-emerald-100 text-emerald-700 border-emerald-200"; riskLabel = "🟢 ปกติ/สม่ำเสมอ"; } 
          else if (percent >= 60) { riskLevel = "Medium"; riskClass = "bg-amber-100 text-amber-700 border-amber-200"; riskLabel = "🟡 ปานกลาง"; } 
          else { riskLevel = "High"; riskClass = "bg-rose-100 text-rose-700 border-rose-200"; riskLabel = "🔴 ติดตาม/เสี่ยง"; }
       }
 
-      // บังคับผลักไปกลุ่ม "ต้องติดตาม" หากมีเดือนที่ไม่ส่งงาน
       if(isAutoDowngraded && riskLevel !== "Pending") {
           riskLevel = "High"; 
           riskClass = "bg-rose-100 text-rose-700 border-rose-200"; 
@@ -589,11 +1029,9 @@
         resultHeader.classList.remove('hidden');
 
         filtered.forEach(dist => {
-           // เช็คเปอร์เซ็นต์ตามเกณฑ์ใหม่ 80, 60
            const scoreColorClass = dist.maxPossibleScore === 0 ? 'text-slate-400' : (dist.percent >= 80 ? 'text-emerald-600' : (dist.percent >= 60 ? 'text-amber-500' : 'text-rose-600'));
            const bgProgressClass = dist.maxPossibleScore === 0 ? 'bg-slate-300' : (dist.percent >= 80 ? 'bg-emerald-500' : (dist.percent >= 60 ? 'bg-amber-500' : 'bg-rose-500'));
 
-           // การ์ด (ใช้ onclick เพื่อเปิด Modal)
            resultArea.innerHTML += `
             <div onclick="openModal('${dist.code}')" class="bg-white rounded-[1.25rem] shadow-sm border ${dist.isAutoDowngraded ? 'border-rose-300' : 'border-slate-100'} hover:shadow-xl hover:-translate-y-1 hover:border-indigo-300 transition-all duration-300 flex flex-col justify-between fade-in cursor-pointer relative overflow-hidden">
               <div class="p-5 flex flex-col h-full z-10 bg-white">
@@ -629,16 +1067,12 @@
       }, 300);
     }
 
-    // ------------------------------------
-    // 3. ฟังก์ชัน UI Modal
-    // ------------------------------------
     function openModal(code) {
       const dist = allData.find(d => d.code === code);
       if(!dist) return;
 
       let monthsHtml = '';
       dist.periods.forEach((p, idx) => {
-         // จับคู่สีตามสถานะเพื่อทำปุ่มสถานะรายเดือน
          let btnClass = "bg-slate-50 border-slate-200 text-slate-500";
          if (p._smartStatus.type === 'pass') btnClass = "bg-emerald-50 border-emerald-200 text-emerald-700";
          else if (p._smartStatus.type === 'edit') btnClass = "bg-amber-50 border-amber-200 text-amber-700";
@@ -741,17 +1175,6 @@
       document.getElementById('searchRisk').value = '';
       updateNationalOverview();
     }
-
-    // ------------------------------------
-    // 4. โหลด iframe ของแท็บแรก (tab1) ทันทีตอนเปิดหน้าเว็บ
-    // เพราะ tab1 มี class "active" ตั้งแต่ต้น จึงไม่ผ่านฟังก์ชัน switchTab()
-    // ------------------------------------
-    document.addEventListener('DOMContentLoaded', () => {
-      const firstIframe = document.querySelector('#tab1 iframe[data-src]');
-      if (firstIframe) {
-        firstIframe.setAttribute('src', firstIframe.getAttribute('data-src'));
-      }
-    });
   </script>
 </body>
 </html>
